@@ -27,7 +27,7 @@ class Token {
 
 public class Lex implements TokenId {
     private int lastChar;
-    private StringBuffer textBuffer;
+    private StringBuilder textBuffer;
     private Token currentToken;
     private Token lookAheadTokens;
 
@@ -39,15 +39,19 @@ public class Lex implements TokenId {
      * Constructs a lexical analyzer.
      */
     public Lex(String s) {
+        this(s, 0);
+    }
+
+    Lex(String s, int startLineNumber) {
         lastChar = -1;
-        textBuffer = new StringBuffer();
+        textBuffer = new StringBuilder();
         currentToken = new Token();
         lookAheadTokens = null;
 
         input = s;
         position = 0;
         maxlen = s.length();
-        lineNumber = 0;
+        lineNumber = startLineNumber;
     }
 
     public int get() {
@@ -123,7 +127,7 @@ public class Lex implements TokenId {
         else if(c == '.'){
             c = getc();
             if ('0' <= c && c <= '9') {
-                StringBuffer tbuf = textBuffer;
+                StringBuilder tbuf = textBuffer;
                 tbuf.setLength(0);
                 tbuf.append('.');
                 return readDouble(tbuf, c, token);
@@ -163,7 +167,8 @@ public class Lex implements TokenId {
                     ungetc(c);
                     c = '/';
                 }
-            }
+            } else if (c == '\n')
+                ++lineNumber;
         } while(isBlank(c));
         return c;
     }
@@ -205,7 +210,7 @@ public class Lex implements TokenId {
 
     private int readStringL(Token token) {
         int c;
-        StringBuffer tbuf = textBuffer;
+        StringBuilder tbuf = textBuffer;
         tbuf.setLength(0);
         for (;;) {
             while ((c = getc()) != '"') {
@@ -287,7 +292,7 @@ public class Lex implements TokenId {
         }
         else if (c2 == 'E' || c2 == 'e'
                  || c2 == 'D' || c2 == 'd' || c2 == '.') {
-            StringBuffer tbuf = textBuffer;
+            StringBuilder tbuf = textBuffer;
             tbuf.setLength(0);
             tbuf.append(value);
             return readDouble(tbuf, c2, token);
@@ -300,7 +305,7 @@ public class Lex implements TokenId {
         }
     }
 
-    private int readDouble(StringBuffer sbuf, int c, Token token) {
+    private int readDouble(StringBuilder sbuf, int c, Token token) {
         if (c != 'E' && c != 'e' && c != 'D' && c != 'd') {
             sbuf.append((char)c);
             for (;;) {
@@ -412,7 +417,7 @@ public class Lex implements TokenId {
     }
 
     private int readIdentifier(int c, Token token) {
-        StringBuffer tbuf = textBuffer;
+        StringBuilder tbuf = textBuffer;
         tbuf.setLength(0);
 
         do {
@@ -528,5 +533,9 @@ public class Lex implements TokenId {
         int c = lastChar;
         lastChar = -1;
         return c;
+    }
+
+    public int getLineNumber() {
+        return lineNumber + 1;
     }
 }

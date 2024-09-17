@@ -14,9 +14,6 @@ import test2.DefineClassCapability;
 @SuppressWarnings({"rawtypes","unused"})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class JvstTest2 extends JvstTestRoot {
-    public JvstTest2(String name) {
-         super(name);
-    }
 
     public void testInsertAt() throws Exception {
         CtClass cc = sloader.get("test2.InsertAt");
@@ -275,10 +272,8 @@ public class JvstTest2 extends JvstTestRoot {
         String src =
             "public void sampleMethod() throws Exception {"
           + "java.util.Properties props = new java.util.Properties();"
-          + "java.rmi.activation.ActivationGroupDesc.CommandEnvironment ace "
-          + " = null;"
-          + "java.rmi.activation.ActivationGroupDesc agd "
-          + " = new java.rmi.activation.ActivationGroupDesc(props,ace);}";
+          + "test2.Inner2.Child ace = null;"
+          + "test2.Inner2 agd = new test2.Inner2(props, ace);}";
         CtMethod newmethod = CtNewMethod.make(src, target);
         target.addMethod(newmethod);
 

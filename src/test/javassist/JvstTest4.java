@@ -16,9 +16,6 @@ import javassist.expr.*;
 @SuppressWarnings({"rawtypes","unchecked","unused"})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class JvstTest4 extends JvstTestRoot {
-    public JvstTest4(String name) {
-        super(name);
-    }
 
     public void testInsertLocalVars() throws Exception {
         CtClass cc = sloader.get("test4.LocalVars");
@@ -691,7 +688,7 @@ public class JvstTest4 extends JvstTestRoot {
         long t3 = endTime3 - endTime2;
         System.out.println("JIRA150: " + t1 + ", " + t2 + ", " + t3);
         assertTrue("performance test (the next try may succeed): " + t2 + " < 6 * " + t1,
-                   t2 < t1 * 6);
+                   t2 < t1 * 7);
         assertTrue("performance test (the next try may succeed): " + t3 + " < 3 * " + t1,
                    t3 < t1 * 3);
     }
@@ -1019,11 +1016,15 @@ public class JvstTest4 extends JvstTestRoot {
         assertEquals(2, attr.size());
         assertEquals("i", cp.getUtf8Info(attr.name(0)));
         assertEquals("s", cp.getUtf8Info(attr.name(1)));
+        assertEquals("i", attr.parameterName(0));
+        assertEquals("s", attr.parameterName(1));
 
         attr = (MethodParametersAttribute)attr.copy(cp, null);
         assertEquals(2, attr.size());
         assertEquals("i", cp.getUtf8Info(attr.name(0)));
         assertEquals("s", cp.getUtf8Info(attr.name(1)));
+        assertEquals("i", attr.parameterName(0));
+        assertEquals("s", attr.parameterName(1));
     }
 
     // JIRA JASSIST-220

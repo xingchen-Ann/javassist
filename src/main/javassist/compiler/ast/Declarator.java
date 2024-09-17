@@ -30,16 +30,16 @@ public class Declarator extends ASTList implements TokenId {
     protected int localVar;
     protected String qualifiedClass;    // JVM-internal representation
 
-    public Declarator(int type, int dim) {
-        super(null);
+    public Declarator(int type, int dim, int lineNumber) {
+        super(null, lineNumber);
         varType = type;
         arrayDim = dim;
         localVar = -1;
         qualifiedClass = null;
     }
 
-    public Declarator(ASTList className, int dim) {
-        super(null);
+    public Declarator(ASTList className, int dim, int lineNumber) {
+        super(null, lineNumber);
         varType = CLASS;
         arrayDim = dim;
         localVar = -1;
@@ -49,21 +49,21 @@ public class Declarator extends ASTList implements TokenId {
     /* For declaring a pre-defined? local variable.
      */
     public Declarator(int type, String jvmClassName, int dim,
-                      int var, Symbol sym) {
-        super(null);
+                      int var, Symbol sym, int lineNumber) {
+        super(null, lineNumber);
         varType = type;
         arrayDim = dim;
         localVar = var;
         qualifiedClass = jvmClassName;
         setLeft(sym);
-        append(this, null);     // initializer
+        append(this, null, lineNumber);     // initializer
     }
 
-    public Declarator make(Symbol sym, int dim, ASTree init) {
-        Declarator d = new Declarator(this.varType, this.arrayDim + dim);
+    public Declarator make(Symbol sym, int dim, ASTree init, int lineNumber) {
+        Declarator d = new Declarator(this.varType, this.arrayDim + dim, lineNumber);
         d.qualifiedClass = this.qualifiedClass;
         d.setLeft(sym);
-        append(d, init);
+        append(d, init, lineNumber);
         return d;
     }
 
@@ -107,12 +107,12 @@ public class Declarator extends ASTList implements TokenId {
         if (name == null)
             return null;
 
-        StringBuffer sbuf = new StringBuffer();
+        StringBuilder sbuf = new StringBuilder();
         astToClassName(sbuf, name, sep);
         return sbuf.toString();
     }
 
-    private static void astToClassName(StringBuffer sbuf, ASTList name,
+    private static void astToClassName(StringBuilder sbuf, ASTList name,
                                        char sep) {
         for (;;) {
             ASTree h = name.head();

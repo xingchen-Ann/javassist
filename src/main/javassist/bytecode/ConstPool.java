@@ -110,8 +110,10 @@ public final class ConstPool
     public static final int CONST_Dynamic = DynamicInfo.tag;
 
     /**
-     * <code>CONSTANT_InvokeDynamic</code>
+     * <code>CONSTANT_DynamicCallSite</code>,
+     * also known as <code>CONSTANT_InvokeDynamic</code>
      */
+    public static final int CONST_DynamicCallSite = InvokeDynamicInfo.tag;
     public static final int CONST_InvokeDynamic = InvokeDynamicInfo.tag;
 
     /**
@@ -1431,6 +1433,9 @@ public final class ConstPool
      */
     public void write(DataOutputStream out) throws IOException
     {
+        if (numOfItems < 0 || ((1 << 16) - 1) < numOfItems)
+            throw new IOException("too many constant pool items " + numOfItems);
+
         out.writeShort(numOfItems);
         LongVector v = items;
         int size = numOfItems;

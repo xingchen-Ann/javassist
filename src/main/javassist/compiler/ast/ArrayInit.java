@@ -25,8 +25,27 @@ public class ArrayInit extends ASTList {
     /** default serialVersionUID */
     private static final long serialVersionUID = 1L;
 
-    public ArrayInit(ASTree firstElement) {
-        super(firstElement);
+    /**
+     * Constructs an object.
+     *
+     * @param firstElement maybe null when the initializer is <code>{}</code> (empty).
+     * @param lineNumber
+     */
+    public ArrayInit(ASTree firstElement, int lineNumber) {
+        super(firstElement, lineNumber);
+    }
+
+    /**
+     * Gets the number of the elements.  Don't call {@link #length()}.
+     *
+     * @return the number of the elements.
+     */
+    public int size() {
+        int s = length();
+        if (s == 1 && head() == null)
+            return 0;
+        else
+            return s;
     }
 
     @Override

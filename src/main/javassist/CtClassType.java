@@ -106,7 +106,7 @@ class CtClassType extends CtClass {
     }
 
     @Override
-    protected void extendToString(StringBuffer buffer) {
+    protected void extendToString(StringBuilder buffer) {
         if (wasChanged)
             buffer.append("changed ");
 
@@ -125,7 +125,7 @@ class CtClassType extends CtClass {
             if (ext != null) {
                 String name = ext.getName();
                 if (!name.equals("java.lang.Object"))
-                    buffer.append(" extends " + ext.getName());
+                    buffer.append(" extends ").append(ext.getName());
             }
         }
         catch (NotFoundException e) {
@@ -155,7 +155,7 @@ class CtClassType extends CtClass {
                    memCache.methodHead(), memCache.lastMethod());
     }
 
-    private void exToString(StringBuffer buffer, String msg,
+    private void exToString(StringBuilder buffer, String msg,
                             CtMember head, CtMember tail) {
         buffer.append(msg);
         while (head != tail) {
@@ -179,6 +179,7 @@ class CtClassType extends CtClass {
     }
 
     public ClassFile getClassFile3(boolean doCompress) {
+        // quick path - no locking
         ClassFile cfile = classfile;
         if (cfile != null)
             return cfile;
@@ -186,16 +187,28 @@ class CtClassType extends CtClass {
         if (doCompress)
             classPool.compress();
 
-        if (rawClassfile != null) {
+        byte[] rcfile;
+        synchronized (this) {
+            // repeat under lock to make sure we get a consistent result (classfile might have been set by another thread)
+            cfile = classfile;
+            if (cfile != null)
+                return cfile;
+
+            rcfile = rawClassfile;
+        }
+
+        if (rcfile != null) {
+            final ClassFile cf;
             try {
-                ClassFile cf = new ClassFile(new DataInputStream(
-                                             new ByteArrayInputStream(rawClassfile)));
-                rawClassfile = null;
-                getCount = GET_THRESHOLD;
-                return setClassFile(cf);
+                cf = new ClassFile(new DataInputStream(new ByteArrayInputStream(rcfile)));
             }
             catch (IOException e) {
                 throw new RuntimeException(e.toString(), e);
+            }
+            getCount = GET_THRESHOLD;
+            synchronized (this) {
+                rawClassfile = null;
+                return setClassFile(cf);
             }
         }
 
@@ -1750,8 +1763,7 @@ class CtClassType extends CtClass {
         int pos = it.insertEx(initializer.get());
         it.insert(initializer.getExceptionTable(), pos);
         int maxstack = codeAttr.getMaxStack();
-        if (maxstack < stacksize)
-            codeAttr.setMaxStack(stacksize);
+        codeAttr.setMaxStack(maxstack + stacksize);
     }
 
     private int makeFieldInitializer(Bytecode code, CtClass[] parameters)

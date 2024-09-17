@@ -28,6 +28,7 @@ public class Pair extends ASTree {
     protected ASTree left, right;
 
     public Pair(ASTree _left, ASTree _right) {
+        super(_left.getLineNumber());
         left = _left;
         right = _right;
     }
@@ -37,7 +38,7 @@ public class Pair extends ASTree {
 
     @Override
     public String toString() {
-        StringBuffer sbuf = new StringBuffer();
+        StringBuilder sbuf = new StringBuilder();
         sbuf.append("(<Pair> ");
         sbuf.append(left == null ? "<null>" : left.toString());
         sbuf.append(" . ");

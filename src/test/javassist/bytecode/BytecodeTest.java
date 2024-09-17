@@ -6,6 +6,7 @@ import junit.framework.*;
 import javassist.*;
 import javassist.bytecode.annotation.*;
 import javassist.bytecode.SignatureAttribute.*;
+import test4.InvokeDynCopyDest;
 
 @SuppressWarnings("unused")
 public class BytecodeTest extends TestCase {
@@ -354,6 +355,9 @@ public class BytecodeTest extends TestCase {
                 assertEquals("I", ainfo2.descriptor(i));
         }
         print("**** end ***");
+
+        assertEquals("this", ainfo2.variableNameByIndex(0));
+        assertEquals("i", ainfo2.variableNameByIndex(1));
     }
 
     public void testAnnotations() throws Exception {
@@ -458,24 +462,28 @@ public class BytecodeTest extends TestCase {
 
     public void testSignatureChange() throws Exception {
         changeMsig("<S:Ljava/lang/Object;>(TS;[TS;)Ljava/lang/Object", "java/lang/Object",
-                   "<S:Ljava/lang/Objec;>(TS;[TS;)Ljava/lang/Object", "java/lang/Objec"); 
+                   "<S:Ljava/lang/Objec;>(TS;[TS;)Ljava/lang/Object", "java/lang/Objec");
         changeMsig("<S:Ljava/lang/Object;>(TS;[TS;)TT;", "java/lang/Object",
-                   "<S:Ljava/lang/Objec;>(TS;[TS;)TT;", "java/lang/Objec"); 
+                   "<S:Ljava/lang/Objec;>(TS;[TS;)TT;", "java/lang/Objec");
         changeMsig("<S:Ljava/lang/Object;>(TS;[TS;)Ljava/lang/Object2;", "java/lang/Object",
-                   "<S:Ljava/lang/Objec;>(TS;[TS;)Ljava/lang/Object2;", "java/lang/Objec"); 
+                   "<S:Ljava/lang/Objec;>(TS;[TS;)Ljava/lang/Object2;", "java/lang/Objec");
         changeMsig("<S:Ljava/lang/Object;>(TS;[TS;)Ljava/lang/Objec;", "java/lang/Object",
-                   "<S:Ljava/lang/Object2;>(TS;[TS;)Ljava/lang/Objec;", "java/lang/Object2"); 
+                   "<S:Ljava/lang/Object2;>(TS;[TS;)Ljava/lang/Objec;", "java/lang/Object2");
         changeMsig2("<S:Ljava/lang/Object;>(TS;[TS;)TT;", "java/lang/Object",
-                    "<S:Ljava/lang/Objec;>(TS;[TS;)TT;", "java/lang/Objec"); 
+                    "<S:Ljava/lang/Objec;>(TS;[TS;)TT;", "java/lang/Objec");
         changeMsig2("<S:Ljava/lang/Object;>(TS;[TS;)Ljava/lang/Object2;", "java/lang/Object",
-                    "<S:Ljava/lang/Objec;>(TS;[TS;)Ljava/lang/Object2;", "java/lang/Objec"); 
+                    "<S:Ljava/lang/Objec;>(TS;[TS;)Ljava/lang/Object2;", "java/lang/Objec");
         changeMsig2("<S:Ljava/lang/Object;>(TS;[TS;)Ljava/lang/Objec;", "java/lang/Object",
-                    "<S:Ljava/lang/Object2;>(TS;[TS;)Ljava/lang/Objec;", "java/lang/Object2"); 
+                    "<S:Ljava/lang/Object2;>(TS;[TS;)Ljava/lang/Objec;", "java/lang/Object2");
         String sig = "<T:Ljava/lang/Exception;>LPoi$Foo<Ljava/lang/String;>;LBar;LBar2;";
-        //String res = "<T:Ljava/lang/Exception;>LPoi$Foo<Ljava/lang/String2;>;LBar;LBar2;";
-        changeMsig(sig, "java/lang/String", sig, "java/lang/String2");
-        changeMsig2(sig, "java/lang/String", sig, "java/lang/String2");
+        String res = "<T:Ljava/lang/Exception;>LPoi$Foo<Ljava/lang/String2;>;LBar;LBar2;";
+        changeMsig(sig, "java/lang/String", res, "java/lang/String2");
+        changeMsig2(sig, "java/lang/String", res, "java/lang/String2");
         changeMsig("Ltest<TE;>.List;", "ist", "Ltest<TE;>.List;", "IST");
+        changeMsig("Ljava/lang/String<Ljava/lang/Object;>;", "java/lang/String",
+                   "Ljava/lang/String2<Ljava/lang/Object;>;", "java/lang/String2");
+        changeMsig2("Ljava/lang/String<Ljava/lang/Object;>;", "java/lang/String",
+                   "Ljava/lang/String2<Ljava/lang/Object;>;", "java/lang/String2");
     }
 
     private void changeMsig(String old, String oldname, String result, String newname) {
@@ -676,7 +684,7 @@ public class BytecodeTest extends TestCase {
         assertFalse(fi1.equals(fi3));
         assertFalse(fi1.equals(ci1));
         assertFalse(fi1.equals(null));
-       
+
         LongInfo li1 = new LongInfo(12345L, n++);
         LongInfo li2 = new LongInfo(12345L, n++);
         LongInfo li3 = new LongInfo(-12345L, n++);
@@ -825,6 +833,28 @@ public class BytecodeTest extends TestCase {
         assertEquals("test4.InvokeDyn", cc2.getClassFile().getName());
         ConstPool cPool2 = cc2.getClassFile().getConstPool();
         assertEquals("(I)V", cPool2.getUtf8Info(cPool2.getMethodTypeInfo(mtIndex)));
+    }
+
+    public void testInvokeDynamicWithCopy() throws Exception {
+        CtClass srcCc = loader.get("test4.InvokeDynCopySrc");
+        CtClass destCc = loader.get("test4.InvokeDynCopyDest");
+
+        // copy source constructor to dest
+        for (CtConstructor constructor : destCc.getConstructors()) {
+            for (CtConstructor srcClassConstructor : srcCc.getConstructors()) {
+                if (constructor.getSignature().equalsIgnoreCase(srcClassConstructor.getSignature())) {
+                    constructor.setBody(srcClassConstructor, null);
+                }
+            }
+        }
+
+        // set dest class method body by source class
+        destCc.getDeclaredMethod("getString").setBody(srcCc.getDeclaredMethod("getString"), new ClassMap());
+
+        Object destObj = (new Loader(loader)).loadClass(destCc.getName()).getConstructor().newInstance();
+
+        // if don't copy bootstrap method and static lambda method it will throw exception when invoke
+        assertEquals("hello", destObj.getClass().getMethod("getString").invoke(destObj));
     }
 
     public static Test suite() {
